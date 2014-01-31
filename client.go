@@ -8,19 +8,14 @@ import (
 	"strings"
 )
 
-type Handler interface {
-}
-
 type Client interface {
 	Send(format string, args ...interface{})
-	RegisterHandler(handler Handler)
 }
 
 type client struct {
 	connection io.ReadWriteCloser
 	rw         *bufio.Reader
 	wr         *bufio.Writer
-	handlers   []Handler
 }
 
 func Connect(address string) (*client, error) {
@@ -32,7 +27,6 @@ func Connect(address string) (*client, error) {
 		connection: connection,
 		rw:         bufio.NewReader(connection),
 		wr:         bufio.NewWriter(connection),
-		handlers:   make([]Handler, 0, 4),
 	}
 	return c, nil
 }
