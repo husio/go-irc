@@ -5,7 +5,7 @@ import (
 )
 
 type Connection struct {
-	conn     net.Conn
+	conn net.Conn
 }
 
 func Dial(address string) (*Connection, error) {

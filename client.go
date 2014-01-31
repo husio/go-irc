@@ -10,6 +10,7 @@ import (
 
 type Client interface {
 	Send(format string, args ...interface{})
+	ReadMessage() (Message, error)
 }
 
 type client struct {
