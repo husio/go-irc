@@ -28,7 +28,7 @@ type message struct {
 	trailing string
 }
 
-func ParseLine(raw string) (*message, error) {
+func ParseLine(raw string) (Message, error) {
 	raw = strings.TrimSpace(raw)
 	m := &message{raw: raw}
 	if raw[0] == ':' {

@@ -19,7 +19,7 @@ type client struct {
 	wr         *bufio.Writer
 }
 
-func Connect(address string) (*client, error) {
+func Connect(address string) (Client, error) {
 	connection, err := Dial(address)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (c *client) Send(format string, args ...interface{}) {
 	}
 }
 
-func (c *client) ReadMessage() (*message, error) {
+func (c *client) ReadMessage() (Message, error) {
 	rd := textproto.NewReader(c.rw)
 	line, err := rd.ReadLine()
 	if err != nil {
