@@ -3,77 +3,43 @@ package irc
 import (
 	"bufio"
 	"fmt"
-	"io"
-	"net/textproto"
+	"net"
 	"strings"
 )
 
-type Client interface {
-	Send(format string, args ...interface{})
-	ReadMessage() (Message, error)
+type Client struct {
+	conn net.Conn
+	rd   *bufio.Reader
 }
 
-type client struct {
-	connection io.ReadWriteCloser
-	rw         *bufio.Reader
-	wr         *bufio.Writer
-}
-
-func Connect(address string) (Client, error) {
-	connection, err := Dial(address)
+func Connect(addr string) (*Client, error) {
+	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
-	c := &client{
-		connection: connection,
-		rw:         bufio.NewReader(connection),
-		wr:         bufio.NewWriter(connection),
+	c := &Client{
+		conn: conn,
+		rd:   bufio.NewReader(conn),
 	}
 	return c, nil
 }
 
-func (c *client) Send(format string, args ...interface{}) {
-	fmt.Fprintf(c.connection, format, args...)
-	if !strings.HasSuffix(format, "\r\n") {
-		fmt.Fprint(c.connection, "\r\n")
+func (c *Client) Send(format string, args ...interface{}) error {
+	if _, err := fmt.Fprintf(c.conn, format, args...); err != nil {
+		return err
 	}
+	if !strings.HasSuffix(format, "\r\n") {
+		if _, err := fmt.Fprint(c.conn, "\r\n"); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func (c *client) ReadMessage() (Message, error) {
-	rd := textproto.NewReader(c.rw)
-	line, err := rd.ReadLine()
+func (c *Client) ReadMessage() (*Message, error) {
+	line, err := c.rd.ReadString('\n')
 	if err != nil {
 		return nil, err
 	}
 	return ParseLine(line)
 }
-
-/*
-	switch msg.Command {
-	case "PING":
-		c.Send("PONG %s\r\n", msg.Trailing)
-	case "JOIN":
-		for _, name := range strings.Split(msg.Params[0], ",") {
-			c.channels[name] = name
-		}
-	case "NICK":
-		c.nick = msg.Trailing
-	case "PART":
-		for _, name := range strings.Split(msg.Params[0], ",") {
-			delete(c.channels, name)
-		}
-	case "KICK":
-		if msg.Params[1] == c.nick {
-			delete(c.channels, msg.Params[0])
-		}
-	case "001":
-		// "Welcome to the Internet Relay Network <nick>!<user>@<host>"
-		rx := regexp.MustCompile(`(\w+)(\!|$)`)
-		nick := rx.FindString(line)
-		if nick[len(nick) - 1] == '!' {
-			nick = nick[:len(nick) - 1]
-		}
-		c.nick = nick
-	}
-	return msg, nil
-*/

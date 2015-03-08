@@ -13,39 +13,32 @@ var (
 // IRC message format:
 //
 // :<prefix> <command> <params> :<trailing>
-type Message interface {
-	Prefix() string
-	Command() string
-	Params() []string
-	Trailing() string
+type Message struct {
+	Raw      string
+	Prefix   string
+	Command  string
+	Params   []string
+	Trailing string
 }
 
-type message struct {
-	raw      string
-	prefix   string
-	command  string
-	params   []string
-	trailing string
-}
-
-func ParseLine(raw string) (Message, error) {
+func ParseLine(raw string) (*Message, error) {
 	raw = strings.TrimSpace(raw)
-	m := &message{raw: raw}
+	m := &Message{Raw: raw}
 	if raw[0] == ':' {
 		chunks := strings.SplitN(raw, " ", 2)
-		m.prefix = chunks[0][1:]
+		m.Prefix = chunks[0][1:]
 		raw = chunks[1]
 	}
 	chunks := strings.SplitN(raw, " ", 2)
-	m.command = chunks[0]
+	m.Command = chunks[0]
 	raw = chunks[1]
-	if m.command == "" {
+	if m.Command == "" {
 		return nil, ErrUnknownCommand
 	}
 
 	if raw[0] != ':' {
 		chunks := strings.SplitN(raw, " :", 2)
-		m.params = strings.Split(chunks[0], " ")
+		m.Params = strings.Split(chunks[0], " ")
 		if len(chunks) == 2 {
 			raw = chunks[1]
 		} else {
@@ -57,27 +50,18 @@ func ParseLine(raw string) (Message, error) {
 		if raw[0] == ':' {
 			raw = raw[1:]
 		}
-		m.trailing = raw
+		m.Trailing = raw
 	}
 	return m, nil
 }
 
-func (m *message) Prefix() string {
-	return m.prefix
+func (m *Message) String() string {
+	return m.Raw
 }
 
-func (m *message) Command() string {
-	return m.command
-}
-
-func (m *message) Params() []string {
-	return m.params
-}
-
-func (m *message) Trailing() string {
-	return m.trailing
-}
-
-func (m *message) String() string {
-	return m.raw
+func (m *Message) Nick() string {
+	if m.Prefix == "" {
+		return ""
+	}
+	return strings.SplitN(m.Prefix, "!", 2)[0]
 }

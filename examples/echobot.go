@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/husio/go-irc"
+	"github.com/husio/irc"
 )
 
 var (
@@ -21,14 +21,16 @@ var (
 
 func main() {
 	flag.Parse()
+
 	c, err := irc.Connect(*address)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalf("cannot connect to %q: %s", *address, err)
 	}
 
+	c.Send("USER %s %s * :github.com/husio/irc example", *name, *address)
 	c.Send("NICK %s", *nick)
-	c.Send("USER %s * * :...", *name)
-	time.Sleep(time.Millisecond * 10)
+
+	time.Sleep(time.Millisecond * 50)
 
 	for _, name := range flag.Args() {
 		if !strings.HasPrefix(name, "#") {
@@ -43,7 +45,7 @@ func main() {
 		for {
 			line, err := reader.ReadString('\n')
 			if err != nil {
-				log.Fatalln(err)
+				log.Fatalf("cannot read from stdin: %s", err)
 			}
 			line = strings.TrimSpace(line)
 			if len(line) == 0 {
@@ -68,22 +70,22 @@ Some basics:
 	for {
 		message, err := c.ReadMessage()
 		if err != nil {
-			log.Fatalln(err)
+			log.Fatalf("cannot read message: %s", err)
 			return
 		}
-		if message.Command() == "PING" {
-			c.Send("PONG %s", message.Trailing())
+		if message.Command == "PING" {
+			c.Send("PONG %s", message.Trailing)
 		}
 
-		if message.Command() == "PRIVMSG" {
-			if strings.HasPrefix(message.Trailing(), *nick) {
-				text := message.Trailing()[len(*nick):]
-				c.Send("PRIVMSG %s :echo! \"%s\"", message.Params()[0], text)
+		if message.Command == "PRIVMSG" {
+			if strings.HasPrefix(message.Trailing, *nick) {
+				text := message.Trailing[len(*nick):]
+				c.Send("PRIVMSG %s :%s \"%s\"", message.Params[0], message.Nick(), text)
 			}
 		}
 
 		if *verbose {
-			log.Println(message)
+			fmt.Println(message)
 		}
 	}
 }
