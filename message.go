@@ -1,13 +1,7 @@
 package irc
 
 import (
-	"errors"
 	"strings"
-)
-
-var (
-	ErrInvalidmessage = errors.New("invalid message format")
-	ErrUnknownCommand = errors.New("unknown command")
 )
 
 // IRC message format:
@@ -21,6 +15,7 @@ type Message struct {
 	Trailing string
 }
 
+// ParseLine return Message created from parsing given line.
 func ParseLine(raw string) (*Message, error) {
 	raw = strings.TrimSpace(raw)
 	m := &Message{Raw: raw}
@@ -32,9 +27,6 @@ func ParseLine(raw string) (*Message, error) {
 	chunks := strings.SplitN(raw, " ", 2)
 	m.Command = chunks[0]
 	raw = chunks[1]
-	if m.Command == "" {
-		return nil, ErrUnknownCommand
-	}
 
 	if raw[0] != ':' {
 		chunks := strings.SplitN(raw, " :", 2)
@@ -59,6 +51,7 @@ func (m *Message) String() string {
 	return m.Raw
 }
 
+// Nick return author nickname or empty string if cannot be determined.
 func (m *Message) Nick() string {
 	if m.Prefix == "" {
 		return ""
